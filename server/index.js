@@ -52,7 +52,16 @@ app.get('/callback', async (req, res) => {
 
 // Get currently playing track
 app.get('/api/now-playing', async (req, res) => {
-  const { access_token } = req.query;
+  // Extract token from Authorization header
+  const authHeader = req.headers.authorization;
+  let access_token = null;
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    access_token = authHeader.substring(7);
+  } else if (req.query.access_token) {
+    // Fallback to query parameter for backward compatibility
+    access_token = req.query.access_token;
+  }
   
   if (!access_token) {
     return res.status(401).json({ error: 'No access token provided' });
@@ -69,21 +78,40 @@ app.get('/api/now-playing', async (req, res) => {
     
     const { item } = data.body;
     
-    res.json({
-      isPlaying: true,
-      track: {
-        name: item.name,
-        artist: item.artists.map(artist => artist.name).join(', '),
-        album: item.album.name,
-        albumArt: item.album.images[0]?.url,
-        url: item.external_urls.spotify,
-        duration: item.duration_ms,
-        progress: data.body.progress_ms
+    // Add retry logic if the request fails
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        res.json({
+          isPlaying: true,
+          track: {
+            name: item.name,
+            artist: item.artists.map(artist => artist.name).join(', '),
+            album: item.album.name,
+            albumArt: item.album.images[0]?.url,
+            url: item.external_urls.spotify,
+            duration: item.duration_ms,
+            progress: data.body.progress_ms
+          }
+        });
+        return;
+      } catch (retryErr) {
+        retries++;
+        if (retries === maxRetries) {
+          throw retryErr;
+        }
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-    });
+    }
   } catch (err) {
     console.error('Error getting current playback:', err);
-    res.status(500).json({ error: 'Failed to fetch currently playing track' });
+    const errorMessage = err.statusCode === 401 
+      ? 'Authentication failed. Please log in again.'
+      : 'Failed to fetch currently playing track';
+    res.status(err.statusCode || 500).json({ error: errorMessage });
   }
 });
 
