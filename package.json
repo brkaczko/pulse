@@ -7,7 +7,8 @@
     "server": "nodemon server/index.js",
     "client": "webpack serve --mode development",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "analyze": "webpack --mode production --analyze"
   },
   "keywords": [],
   "author": "",
@@ -29,10 +30,13 @@
     "babel-loader": "^10.0.0",
     "concurrently": "^9.1.2",
     "css-loader": "^7.1.2",
+    "css-minimizer-webpack-plugin": "^6.0.0",
     "html-webpack-plugin": "^5.6.3",
     "nodemon": "^3.1.9",
     "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.3.14",
     "webpack": "^5.98.0",
+    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.0"
   }

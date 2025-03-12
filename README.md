@@ -1,88 +1,113 @@
 # Pulse
 
-A minimalist widget that displays your currently playing Spotify track in real-time.
+A minimalist widget that displays your currently playing track in a clean, modern interface.
 
 ## Features
 
-- Spotify authentication using OAuth 2.0
-- Real-time display of currently playing track
-- Track progress bar that updates in real-time
-- Compact widget design in the bottom right corner
-- Fullscreen mode for immersive viewing
-- Persistent login using localStorage
+- Real-time display of currently playing track on Spotify
+- Fullscreen mode with keyboard shortcut (Cmd+F on Mac, Ctrl+F on Windows)
+- Adaptive polling based on user activity (saves bandwidth when inactive)
+- Responsive design that works on desktop and mobile
+- Comprehensive error handling with user-friendly messages
 
-## Prerequisites
+## Tech Stack
+
+- **Frontend**: React.js
+- **Backend**: Node.js with Express
+- **API**: Spotify Web API
+- **Build Tools**: Webpack, Babel
+
+## Getting Started
+
+### Prerequisites
 
 - Node.js (v14 or higher)
 - npm (v6 or higher)
-- A Spotify account
-- A Spotify Developer account with a registered application
+- Spotify Developer Account
 
-## Setup
+### Setup
 
-1. Clone this repository:
-   ```
-   git clone <repository-url>
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/pulse.git
    cd pulse
    ```
 
 2. Install dependencies:
-   ```
+   ```bash
    npm install
    ```
 
 3. Create a Spotify Developer Application:
    - Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/)
-   - Log in with your Spotify account
-   - Click "Create an App"
-   - Fill in the app name and description
-   - Set the Redirect URI to `http://localhost:8888/callback`
-   - Save your Client ID and Client Secret
+   - Create a new application
+   - Set the redirect URI to `http://localhost:8888/callback`
+   - Note your Client ID and Client Secret
 
-4. Create a `.env` file in the root directory with the following content:
-   ```
-   CLIENT_ID=your_spotify_client_id
-   CLIENT_SECRET=your_spotify_client_secret
-   REDIRECT_URI=http://localhost:8888/callback
-   ```
+4. Configure environment variables:
+   - Copy `.env.example` to `.env`
+   - Fill in your Spotify Client ID and Client Secret
 
 5. Start the development server:
-   ```
+   ```bash
    npm run dev
    ```
 
 6. Open your browser and navigate to `http://localhost:3000`
 
-## Usage
-
-1. Click "Connect with Spotify" to authenticate with your Spotify account
-2. Grant the necessary permissions
-3. Start playing music on any of your Spotify-connected devices
-4. The app will display your currently playing track with album art, track name, artist, and progress
-
 ## Building for Production
 
-To build the application for production:
+To create a production build:
 
-```
+```bash
 npm run build
 ```
 
-Then start the server:
+To start the production server:
 
-```
+```bash
 npm start
 ```
 
-## Technologies Used
+## Project Structure
 
-- React
-- Node.js
-- Express
-- Spotify Web API
-- Webpack
-- Babel
+```
+pulse/
+├── client/               # Frontend code
+│   ├── components/       # React components
+│   ├── hooks/            # Custom React hooks
+│   ├── services/         # API services
+│   ├── index.html        # HTML template
+│   ├── index.js          # Entry point
+│   └── styles.css        # Global styles
+├── server/               # Backend code
+│   └── index.js          # Express server
+├── .babelrc              # Babel configuration
+├── .env.example          # Environment variables template
+├── .gitignore            # Git ignore file
+├── package.json          # Dependencies and scripts
+├── README.md             # Project documentation
+└── webpack.config.js     # Webpack configuration
+```
+
+## Performance Optimizations
+
+- Code splitting for better load times
+- Tree shaking to eliminate unused code
+- Caching for faster builds
+- Minification of JavaScript and CSS
+- Optimized polling based on user activity
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT 
+This project is licensed under the ISC License.
+
+## Acknowledgements
+
+- [Spotify Web API](https://developer.spotify.com/documentation/web-api/)
+- [React](https://reactjs.org/)
+- [Express](https://expressjs.com/) 

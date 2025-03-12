@@ -21,8 +21,33 @@ if (process.env.NODE_ENV === 'production') {
 const spotifyApi = new SpotifyWebApi({
   clientId: process.env.CLIENT_ID,
   clientSecret: process.env.CLIENT_SECRET,
-  redirectUri: process.env.REDIRECT_URI
+  redirectUri: process.env.REDIRECT_URI || 'http://localhost:8888/callback'
 });
+
+/**
+ * Error handler middleware
+ */
+const errorHandler = (err, req, res, next) => {
+  console.error('API Error:', err);
+  
+  // Determine appropriate status code
+  const statusCode = err.statusCode || 500;
+  
+  // Create appropriate error message
+  let errorMessage = 'Internal server error';
+  
+  if (err.statusCode === 401 || err.statusCode === 403) {
+    errorMessage = 'Authentication failed. Please log in again.';
+  } else if (err.statusCode === 429) {
+    errorMessage = 'Rate limit exceeded. Please try again later.';
+  } else if (err.body && err.body.error && err.body.error.message) {
+    errorMessage = err.body.error.message;
+  } else if (err.message) {
+    errorMessage = err.message;
+  }
+  
+  res.status(statusCode).json({ error: errorMessage });
+};
 
 // Login route
 app.get('/login', (req, res) => {
@@ -32,8 +57,12 @@ app.get('/login', (req, res) => {
 });
 
 // Callback route
-app.get('/callback', async (req, res) => {
+app.get('/callback', async (req, res, next) => {
   const { code } = req.query;
+  
+  if (!code) {
+    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?error=missing_code`);
+  }
   
   try {
     const data = await spotifyApi.authorizationCodeGrant(code);
@@ -43,15 +72,15 @@ app.get('/callback', async (req, res) => {
     spotifyApi.setRefreshToken(refresh_token);
     
     // Redirect to the frontend with tokens as query parameters
-    res.redirect(`http://localhost:3000?access_token=${access_token}&refresh_token=${refresh_token}&expires_in=${expires_in}`);
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?access_token=${access_token}&refresh_token=${refresh_token}&expires_in=${expires_in}`);
   } catch (err) {
     console.error('Error getting tokens:', err);
-    res.redirect('http://localhost:3000?error=invalid_token');
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?error=invalid_token`);
   }
 });
 
 // Get currently playing track
-app.get('/api/now-playing', async (req, res) => {
+app.get('/api/now-playing', async (req, res, next) => {
   // Extract token from Authorization header
   const authHeader = req.headers.authorization;
   let access_token = null;
@@ -72,51 +101,39 @@ app.get('/api/now-playing', async (req, res) => {
   try {
     const data = await spotifyApi.getMyCurrentPlaybackState();
     
-    if (!data.body || !data.body.is_playing) {
+    if (!data.body) {
+      return res.json({ isPlaying: false });
+    }
+    
+    if (!data.body.is_playing) {
       return res.json({ isPlaying: false });
     }
     
     const { item } = data.body;
     
-    // Add retry logic if the request fails
-    let retries = 0;
-    const maxRetries = 3;
-    
-    while (retries < maxRetries) {
-      try {
-        res.json({
-          isPlaying: true,
-          track: {
-            name: item.name,
-            artist: item.artists.map(artist => artist.name).join(', '),
-            album: item.album.name,
-            albumArt: item.album.images[0]?.url,
-            url: item.external_urls.spotify,
-            duration: item.duration_ms,
-            progress: data.body.progress_ms
-          }
-        });
-        return;
-      } catch (retryErr) {
-        retries++;
-        if (retries === maxRetries) {
-          throw retryErr;
-        }
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+    if (!item) {
+      return res.json({ isPlaying: true, track: null });
     }
+    
+    res.json({
+      isPlaying: true,
+      track: {
+        name: item.name,
+        artist: item.artists.map(artist => artist.name).join(', '),
+        album: item.album.name,
+        albumArt: item.album.images[0]?.url,
+        url: item.external_urls.spotify,
+        duration: item.duration_ms,
+        progress: data.body.progress_ms
+      }
+    });
   } catch (err) {
-    console.error('Error getting current playback:', err);
-    const errorMessage = err.statusCode === 401 
-      ? 'Authentication failed. Please log in again.'
-      : 'Failed to fetch currently playing track';
-    res.status(err.statusCode || 500).json({ error: errorMessage });
+    next(err);
   }
 });
 
 // Refresh token
-app.post('/api/refresh-token', async (req, res) => {
+app.post('/api/refresh-token', async (req, res, next) => {
   const { refresh_token } = req.body;
   
   if (!refresh_token) {
@@ -134,8 +151,7 @@ app.post('/api/refresh-token', async (req, res) => {
       expires_in
     });
   } catch (err) {
-    console.error('Error refreshing token:', err);
-    res.status(500).json({ error: 'Failed to refresh token' });
+    next(err);
   }
 });
 
@@ -145,6 +161,9 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
 }
+
+// Register error handler
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
