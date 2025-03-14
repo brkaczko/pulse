@@ -105,27 +105,27 @@ app.get('/api/now-playing', async (req, res, next) => {
       return res.json({ isPlaying: false });
     }
     
-    if (!data.body.is_playing) {
-      return res.json({ isPlaying: false });
-    }
-    
     const { item } = data.body;
     
     if (!item) {
-      return res.json({ isPlaying: true, track: null });
+      return res.json({ isPlaying: false });
     }
     
+    // Create track object regardless of playing state
+    const track = {
+      name: item.name,
+      artist: item.artists.map(artist => artist.name).join(', '),
+      album: item.album.name,
+      albumArt: item.album.images[0]?.url,
+      url: item.external_urls.spotify,
+      duration: item.duration_ms,
+      progress: data.body.progress_ms
+    };
+    
+    // Return track info with correct isPlaying state
     res.json({
-      isPlaying: true,
-      track: {
-        name: item.name,
-        artist: item.artists.map(artist => artist.name).join(', '),
-        album: item.album.name,
-        albumArt: item.album.images[0]?.url,
-        url: item.external_urls.spotify,
-        duration: item.duration_ms,
-        progress: data.body.progress_ms
-      }
+      isPlaying: data.body.is_playing,
+      track: track
     });
   } catch (err) {
     next(err);

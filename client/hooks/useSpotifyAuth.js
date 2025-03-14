@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   refreshAccessToken, 
   storeAuthData, 
   getStoredAuthData, 
   clearAuthData, 
-  isTokenValid 
+  isTokenValid,
+  tokenNeedsRefresh
 } from '../services/spotifyService';
 
 /**
@@ -14,15 +15,13 @@ import {
 const useSpotifyAuth = () => {
   const [token, setToken] = useState('');
   const [refreshToken, setRefreshToken] = useState('');
-  const [expiresIn, setExpiresIn] = useState(0);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const refreshingRef = useRef(false);
 
   // Function to handle logout
   const logout = useCallback(() => {
     setToken('');
     setRefreshToken('');
-    setExpiresIn(0);
     clearAuthData();
   }, []);
 
@@ -33,7 +32,12 @@ const useSpotifyAuth = () => {
       return false;
     }
 
-    setLoading(true);
+    // Prevent multiple simultaneous refresh attempts
+    if (refreshingRef.current) {
+      return true; // Assume it will succeed to prevent cascading failures
+    }
+
+    refreshingRef.current = true;
     setError('');
 
     try {
@@ -48,7 +52,6 @@ const useSpotifyAuth = () => {
       const { access_token, expires_in } = result.data;
       
       setToken(access_token);
-      setExpiresIn(expires_in);
       
       // Update localStorage
       storeAuthData({
@@ -59,12 +62,11 @@ const useSpotifyAuth = () => {
       
       return true;
     } catch (err) {
-      console.error('Error in refresh token hook:', err);
       setError('Failed to refresh session. Please log in again.');
       logout();
       return false;
     } finally {
-      setLoading(false);
+      refreshingRef.current = false;
     }
   }, [logout]);
 
@@ -89,7 +91,6 @@ const useSpotifyAuth = () => {
       // Set tokens in state
       setToken(accessToken);
       setRefreshToken(refreshTokenParam);
-      setExpiresIn(parseInt(expiresInParam));
       
       // Store tokens in localStorage
       storeAuthData({
@@ -102,13 +103,17 @@ const useSpotifyAuth = () => {
       const authData = getStoredAuthData();
       
       if (authData) {
-        const { accessToken, refreshToken: storedRefreshToken, expiresIn: storedExpiresIn } = authData;
+        const { accessToken, refreshToken: storedRefreshToken } = authData;
         
         if (isTokenValid()) {
           // Token is still valid
           setToken(accessToken);
           setRefreshToken(storedRefreshToken);
-          setExpiresIn(storedExpiresIn);
+          
+          // Check if token needs refreshing soon
+          if (tokenNeedsRefresh()) {
+            refresh(storedRefreshToken);
+          }
         } else {
           // Token expired, refresh it
           refresh(storedRefreshToken);
@@ -121,21 +126,23 @@ const useSpotifyAuth = () => {
   useEffect(() => {
     if (!token || !refreshToken) return;
 
+    // Refresh token every 30 minutes to be safe
+    // This is more aggressive than waiting until just before expiry
+    const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+    
     const interval = setInterval(() => {
       refresh(refreshToken);
-    }, (expiresIn - 60) * 1000); // Refresh 1 minute before expiry
+    }, REFRESH_INTERVAL);
 
     return () => {
       clearInterval(interval);
     };
-  }, [token, refreshToken, expiresIn, refresh]);
+  }, [token, refreshToken, refresh]);
 
   return {
     token,
     refreshToken,
-    expiresIn,
     error,
-    loading,
     logout,
     refresh,
     isAuthenticated: !!token

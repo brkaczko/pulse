@@ -11,9 +11,7 @@ const useFullscreen = () => {
   const handleFullscreenChange = useCallback(() => {
     setIsFullscreen(
       document.fullscreenElement || 
-      document.webkitFullscreenElement || 
-      document.mozFullScreenElement || 
-      document.msFullscreenElement
+      document.webkitFullscreenElement
     );
   }, []);
 
@@ -22,9 +20,7 @@ const useFullscreen = () => {
     // Force check the current fullscreen state
     const isCurrentlyFullscreen = 
       document.fullscreenElement || 
-      document.webkitFullscreenElement || 
-      document.mozFullScreenElement || 
-      document.msFullscreenElement;
+      document.webkitFullscreenElement;
     
     if (!isCurrentlyFullscreen) {
       const docEl = document.documentElement;
@@ -33,20 +29,12 @@ const useFullscreen = () => {
         docEl.requestFullscreen();
       } else if (docEl.webkitRequestFullscreen) {
         docEl.webkitRequestFullscreen();
-      } else if (docEl.mozRequestFullScreen) {
-        docEl.mozRequestFullScreen();
-      } else if (docEl.msRequestFullscreen) {
-        docEl.msRequestFullscreen();
       }
     } else {
       if (document.exitFullscreen) {
         document.exitFullscreen();
       } else if (document.webkitExitFullscreen) {
         document.webkitExitFullscreen();
-      } else if (document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
       }
     }
   }, []);
@@ -55,14 +43,10 @@ const useFullscreen = () => {
   useEffect(() => {
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
     
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
     };
   }, [handleFullscreenChange]);
 

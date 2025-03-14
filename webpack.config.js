@@ -2,11 +2,9 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
-const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
-  const isAnalyze = process.argv.includes('--analyze');
   
   const plugins = [
     new HtmlWebpackPlugin({
@@ -25,11 +23,6 @@ module.exports = (env, argv) => {
       } : false
     })
   ];
-  
-  // Add bundle analyzer plugin if --analyze flag is passed
-  if (isAnalyze) {
-    plugins.push(new BundleAnalyzerPlugin());
-  }
   
   return {
     entry: './client/index.js',
@@ -60,12 +53,6 @@ module.exports = (env, argv) => {
     },
     resolve: {
       extensions: ['.js', '.jsx'],
-      // Add alias for frequently used imports
-      alias: {
-        hooks: path.resolve(__dirname, 'client/hooks/'),
-        components: path.resolve(__dirname, 'client/components/'),
-        services: path.resolve(__dirname, 'client/services/')
-      }
     },
     plugins,
     devServer: {

@@ -10,13 +10,25 @@ import React from 'react';
  */
 const FullscreenButton = ({ isFullscreen, toggleFullscreen, modKey }) => {
   return (
-    <div className="fullscreen-button-container">
+    <div 
+      className="fullscreen-button-container"
+      onClick={toggleFullscreen}
+      title={isFullscreen ? `Exit Fullscreen (${modKey}+F)` : `Enter Fullscreen (${modKey}+F)`}
+      role="button"
+      tabIndex="0"
+      aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+      aria-pressed={isFullscreen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleFullscreen();
+        }
+      }}
+    >
       <button 
         className="fullscreen-button" 
-        onClick={toggleFullscreen}
-        title={isFullscreen ? `Exit Fullscreen (${modKey}+F)` : `Enter Fullscreen (${modKey}+F)`}
-        aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-        aria-pressed={isFullscreen}
+        aria-hidden="true"
+        tabIndex="-1"
       >
         {isFullscreen ? (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">

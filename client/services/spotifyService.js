@@ -19,7 +19,7 @@ const retryFetch = async (url, options, maxRetries = 3) => {
       } else if (response.status === 429) {
         // Rate limiting - wait and retry
         const retryAfter = response.headers.get('Retry-After') || 1;
-        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+        await new Promise(resolve => setTimeout(resolve, retryAfter * 10000));
       } else if (response.status === 401 || response.status === 403) {
         // Authentication error - should be handled by the caller
         return { error: 'Authentication error', status: response.status, data: responseData };
@@ -28,13 +28,14 @@ const retryFetch = async (url, options, maxRetries = 3) => {
         return { error: responseData.error || 'Unknown error', status: response.status, data: responseData };
       }
     } catch (err) {
-      console.error(`Retry ${retries + 1} failed:`, err);
+      // Silent error handling for retries
     }
     
     retries++;
     if (!success && retries < maxRetries) {
       // Wait before retrying (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+      const backoffTime = 10000 * Math.pow(2, retries);
+      await new Promise(resolve => setTimeout(resolve, backoffTime));
     }
   }
   
@@ -64,7 +65,6 @@ export const getNowPlaying = async (token) => {
     
     return result;
   } catch (err) {
-    console.error('Error fetching now playing:', err);
     return { error: 'Failed to connect to Spotify API' };
   }
 };
@@ -90,7 +90,6 @@ export const refreshAccessToken = async (refreshToken) => {
     
     return result;
   } catch (err) {
-    console.error('Error refreshing token:', err);
     return { error: 'Failed to refresh access token' };
   }
 };
@@ -154,7 +153,28 @@ export const isTokenValid = () => {
   const { timestamp, expiresIn } = authData;
   const currentTime = Date.now();
   const tokenAge = currentTime - timestamp;
-  const tokenExpiry = expiresIn * 1000;
+  const tokenExpiry = expiresIn * 1000; // Convert seconds to milliseconds
   
   return tokenAge < tokenExpiry;
+};
+
+/**
+ * Check if the token needs to be refreshed soon (within the next 5 minutes)
+ * @returns {boolean} - True if the token needs refreshing soon
+ */
+export const tokenNeedsRefresh = () => {
+  const authData = getStoredAuthData();
+  
+  if (!authData) {
+    return true;
+  }
+  
+  const { timestamp, expiresIn } = authData;
+  const currentTime = Date.now();
+  const tokenAge = currentTime - timestamp;
+  const tokenExpiry = expiresIn * 1000; // Convert seconds to milliseconds
+  const refreshThreshold = 5 * 60 * 1000; // 5 minutes in milliseconds
+  
+  // Return true if token will expire within the next 5 minutes
+  return tokenAge > (tokenExpiry - refreshThreshold);
 }; 

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Login from './Login';
 import NowPlaying from './NowPlaying';
 import NotPlaying from './NotPlaying';
+import PausedPlaying from './PausedPlaying';
 import Loading from './Loading';
 import ErrorMessage from './ErrorMessage';
 import FullscreenButton from './FullscreenButton';
@@ -9,7 +10,6 @@ import FullscreenButton from './FullscreenButton';
 // Custom hooks
 import useSpotifyAuth from '../hooks/useSpotifyAuth';
 import useNowPlaying from '../hooks/useNowPlaying';
-import useUserActivity from '../hooks/useUserActivity';
 import useFullscreen from '../hooks/useFullscreen';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 
@@ -22,17 +22,18 @@ const App = () => {
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
   const modKey = isMac ? '⌘' : 'Ctrl';
   
+  // State to keep track of the last played track
+  const [lastPlayedTrack, setLastPlayedTrack] = useState(null);
+  
   // Custom hooks
   const { 
     token, 
     refreshToken, 
     error: authError, 
-    logout, 
     refresh,
     isAuthenticated 
   } = useSpotifyAuth();
   
-  const { isActive } = useUserActivity();
   const { isFullscreen, toggleFullscreen } = useFullscreen();
   
   const { 
@@ -40,7 +41,16 @@ const App = () => {
     loading, 
     error: apiError,
     fetchNowPlaying 
-  } = useNowPlaying(token, () => refresh(refreshToken), isActive);
+  } = useNowPlaying(token, () => refresh(refreshToken));
+
+  // Update lastPlayedTrack when a track is playing or paused
+  useEffect(() => {
+    if (nowPlaying?.track) {
+      // Always update lastPlayedTrack when we have track data
+      // This ensures we have the most recent track info
+      setLastPlayedTrack(nowPlaying.track);
+    }
+  }, [nowPlaying]);
 
   // Set up keyboard shortcuts
   useKeyboardShortcuts({
@@ -73,6 +83,8 @@ const App = () => {
         />
       ) : nowPlaying?.isPlaying ? (
         <NowPlaying track={nowPlaying.track} />
+      ) : lastPlayedTrack ? (
+        <PausedPlaying track={lastPlayedTrack} />
       ) : (
         <NotPlaying />
       )}

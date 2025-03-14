@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const NowPlaying = ({ track }) => {
   const [progress, setProgress] = useState(track.progress);
   const [progressPercent, setProgressPercent] = useState(0);
   const [currentTime, setCurrentTime] = useState('0:00');
   const [duration, setDuration] = useState('0:00');
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     // Update progress when track changes
@@ -15,24 +16,34 @@ const NowPlaying = ({ track }) => {
     const durationSeconds = Math.floor((track.duration % 60000) / 1000);
     setDuration(`${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`);
     
+    // Clear existing interval if any
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
     // Set up interval to update progress
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setProgress(prev => {
+        // If we've reached the end of the track, stop updating
         if (prev >= track.duration) {
-          clearInterval(interval);
+          clearInterval(intervalRef.current);
           return track.duration;
         }
         return prev + 1000;
       });
     }, 1000);
     
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [track]);
   
   useEffect(() => {
     // Calculate progress percentage
     const percent = (progress / track.duration) * 100;
-    setProgressPercent(percent);
+    setProgressPercent(Math.min(percent, 100)); // Ensure it doesn't exceed 100%
     
     // Format current time
     const minutes = Math.floor(progress / 60000);
