@@ -1,14 +1,6 @@
 # Pulse
 
-A minimalist widget that displays your currently playing track in a clean, modern interface.
-
-## Features
-
-- Real-time display of currently playing track on Spotify
-- Fullscreen mode with keyboard shortcut (Cmd+F on Mac, Ctrl+F on Windows)
-- Adaptive polling based on user activity (saves bandwidth when inactive)
-- Responsive design that works on desktop and mobile
-- Comprehensive error handling with user-friendly messages
+A web application for real-time audio visualization.
 
 ## Tech Stack
 
@@ -29,7 +21,7 @@ A minimalist widget that displays your currently playing track in a clean, moder
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/pulse.git
+   git clone https://github.com/brkaczko/pulse.git
    cd pulse
    ```
 
@@ -89,18 +81,6 @@ pulse/
 ├── README.md             # Project documentation
 └── webpack.config.js     # Webpack configuration
 ```
-
-## Performance Optimizations
-
-- Code splitting for better load times
-- Tree shaking to eliminate unused code
-- Caching for faster builds
-- Minification of JavaScript and CSS
-- Optimized polling based on user activity
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 

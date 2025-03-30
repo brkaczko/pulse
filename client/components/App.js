@@ -6,6 +6,7 @@ import PausedPlaying from './PausedPlaying';
 import Loading from './Loading';
 import ErrorMessage from './ErrorMessage';
 import FullscreenButton from './FullscreenButton';
+import MusicVisualization from './MusicVisualization';
 
 // Custom hooks
 import useSpotifyAuth from '../hooks/useSpotifyAuth';
@@ -73,6 +74,8 @@ const App = () => {
         toggleFullscreen={toggleFullscreen} 
         modKey={modKey} 
       />
+      
+      <MusicVisualization track={nowPlaying?.track || lastPlayedTrack} />
       
       {loading && !nowPlaying ? (
         <Loading />
